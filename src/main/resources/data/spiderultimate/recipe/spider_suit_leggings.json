@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "R": "minecraft:red_wool",
+    "B": "minecraft:blue_wool"
+  },
+  "pattern": [
+    "RRR",
+    "B B",
+    "B B"
+  ],
+  "result": {
+    "id": "spiderultimate:spider_suit_leggings",
+    "count": 1
+  }
+}

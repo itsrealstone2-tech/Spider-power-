@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "R": "minecraft:red_wool",
+    "B": "minecraft:blue_wool"
+  },
+  "pattern": [
+    "R R",
+    "BBB",
+    "RRR"
+  ],
+  "result": {
+    "id": "spiderultimate:spider_suit_chestplate",
+    "count": 1
+  }
+}
