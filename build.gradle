@@ -1,0 +1,67 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+repositories {
+	// Loom adds the Minecraft/library repositories automatically.
+}
+
+loom {
+	// Client-only code (rendering, keybinds, HUD) lives in src/client, common + server code in src/main.
+	splitEnvironmentSourceSets()
+
+	mods {
+		"spiderultimate" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// -PsafeBuild leaves out the optional client mixins (crawl body orientation + limb poses). The workflow uses it
+// as an automatic second attempt, so a mismatch in those few hooks can never prevent a working jar.
+def safeBuild = project.hasProperty('safeBuild')
+
+if (safeBuild) {
+	sourceSets.client.java.exclude '**/client/mixin/**'
+	sourceSets.client.resources.exclude '**/*.mixins.json'
+}
+
+processResources {
+	def version = project.version
+	def mixinsEntry = safeBuild ? '[]' : '[{"config": "spiderultimate.client.mixins.json", "environment": "client"}]'
+	inputs.property "version", version
+	inputs.property "mixinsEntry", mixinsEntry
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version, "mixins": mixinsEntry
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName" }
+	}
+}

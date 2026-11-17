@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "spiderultimate",
+  "version": "${version}",
+  "name": "Spider Ultimate",
+  "description": "Physics-based web swinging, web shooter modes, wall and ceiling crawling, spider powers, web wings, spider sense and a procedural spider suit - an original Spider-Man-inspired superhero mod. Install on both client and server.",
+  "authors": ["Spider Ultimate contributors"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/spiderultimate/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.spiderultimate.SpiderUltimate"],
+    "client": ["com.spiderultimate.client.SpiderUltimateClient"]
+  },
+  "mixins": [
+    {"config": "spiderultimate.client.mixins.json", "environment": "client"}
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
