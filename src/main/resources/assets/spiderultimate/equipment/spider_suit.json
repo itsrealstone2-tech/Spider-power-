@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "spiderultimate:spider_suit"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "spiderultimate:spider_suit"
+      }
+    ]
+  }
+}

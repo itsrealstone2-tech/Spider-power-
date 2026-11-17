@@ -1,0 +1,44 @@
+{
+  "web_shoot": {
+    "sounds": [
+      "spiderultimate:web_shoot"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_shoot"
+  },
+  "web_hit": {
+    "sounds": [
+      "spiderultimate:web_hit"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_hit"
+  },
+  "web_swing": {
+    "sounds": [
+      "spiderultimate:web_swing"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_swing"
+  },
+  "web_land": {
+    "sounds": [
+      "spiderultimate:web_land"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_land"
+  },
+  "spider_sense": {
+    "sounds": [
+      "spiderultimate:spider_sense"
+    ],
+    "subtitle": "subtitles.spiderultimate.spider_sense"
+  },
+  "web_wings": {
+    "sounds": [
+      "spiderultimate:web_wings"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_wings"
+  },
+  "web_shield": {
+    "sounds": [
+      "spiderultimate:web_shield"
+    ],
+    "subtitle": "subtitles.spiderultimate.web_shield"
+  }
+}
