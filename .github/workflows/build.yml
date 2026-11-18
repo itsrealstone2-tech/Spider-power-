@@ -1,0 +1,116 @@
+name: build
+
+on:
+  push:
+    branches-ignore:
+      - ci-logs
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+
+      - name: setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: generate textures and sounds
+        timeout-minutes: 10
+        run: |
+          pip install numpy scipy pillow soundfile
+          python tools/generate_assets.py
+          find src/main/resources -name '*.png' -o -name '*.ogg' | sort
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '9.8.2'
+
+      - name: physics self-test (does not block the build)
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/phys
+          javac -d /tmp/phys src/main/java/com/spiderultimate/physics/*.java tools/test/PhysicsSelfTest.java
+          java -cp /tmp/phys PhysicsSelfTest
+
+      - name: build (full)
+        id: full
+        continue-on-error: true
+        run: gradle build --stacktrace 2>&1 | tee build-full.log; exit "${PIPESTATUS[0]}"
+
+      - name: build (safe fallback without optional client mixins)
+        id: safe
+        if: steps.full.outcome == 'failure'
+        run: gradle clean build -PsafeBuild --stacktrace 2>&1 | tee build-safe.log; exit "${PIPESTATUS[0]}"
+
+      - name: upload build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs
+          path: build-*.log
+          if-no-files-found: ignore
+
+      - name: publish build report to ci-logs branch
+        if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        run: |
+          mkdir -p /tmp/ci
+          {
+            echo "commit: $GITHUB_SHA"
+            echo "run: $GITHUB_RUN_ID"
+            echo "full build: ${{ steps.full.outcome }}"
+            echo "safe build: ${{ steps.safe.outcome }}"
+          } > /tmp/ci/summary.txt
+          for f in build-full.log build-safe.log; do
+            if [ -f "$f" ]; then
+              {
+                echo "=== $f: compiler errors ==="
+                grep -n -A3 -E "error:|\.java:[0-9]+: " "$f" | head -400
+                echo
+                echo "=== $f: last 80 lines ==="
+                tail -n 80 "$f"
+              } > "/tmp/ci/$f.txt"
+            fi
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-logs
+          git rm -rf . > /dev/null 2>&1 || true
+          cp /tmp/ci/* .
+          git add summary.txt ./*.txt
+          git commit -m "build report for ${GITHUB_SHA::7}"
+          git push --force origin ci-logs
+
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: SpiderUltimate-jar
+          path: build/libs/
+
+      - name: publish jar as a GitHub Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v -e '-sources' -e '-dev' | head -n 1)
+          echo "Publishing $JAR"
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest "$JAR" \
+            --target "$GITHUB_SHA" \
+            --title "Spider Ultimate - latest build" \
+            --notes "Automatic build of commit ${GITHUB_SHA::7} (${{ steps.full.outcome == 'success' && 'full build' || 'SAFE build - without the optional crawl-pose mixins' }}). Download the .jar below and put it in your Minecraft mods folder (Minecraft 1.21.11 + Fabric + Fabric API)."
