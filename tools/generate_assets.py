@@ -335,16 +335,27 @@ SOUNDS = {
 }
 
 
+_ENC = None
+
+
 def _encoders():
-    out = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], capture_output=True, text=True).stdout
-    return out
+    """Names of the ffmpeg encoders (cached). Never blocks: no stdin, hard timeout."""
+    global _ENC
+    if _ENC is None:
+        try:
+            _ENC = subprocess.run(["ffmpeg", "-nostdin", "-hide_banner", "-encoders"], capture_output=True, text=True,
+                                  stdin=subprocess.DEVNULL, timeout=60).stdout
+        except Exception as e:  # missing ffmpeg, timeout...
+            print("ffmpeg is not usable:", e, flush=True)
+            _ENC = ""
+    return _ENC
 
 
 def write_ogg(name, data):
-    """Writes mono Ogg Vorbis with libvorbis (CI). Falls back to ffmpeg's native encoder, which is stereo only."""
+    """Writes mono Ogg Vorbis. Tries ffmpeg+libvorbis (CI), then ffmpeg's native encoder (stereo only), then soundfile."""
     out = mk(os.path.join(A, "sounds", name + ".ogg"))
     pcm = (np.clip(data, -1, 1) * 32767).astype("<i2")
-    have_lib = " libvorbis " in _encoders()
+    attempts = []
     with tempfile.TemporaryDirectory() as tmp:
         wav = os.path.join(tmp, name + ".wav")
         with wave.open(wav, "wb") as w:
@@ -352,12 +363,25 @@ def write_ogg(name, data):
             w.setsampwidth(2)
             w.setframerate(SR)
             w.writeframes(pcm.tobytes())
-        if have_lib:
-            cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "libvorbis", "-ac", "1", "-q:a", "5", out]
-        else:
-            cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "vorbis", "-strict", "-2",
-                   "-ac", "2", "-b:a", "96k", out]
-        subprocess.run(cmd, check=True)
+        base = ["ffmpeg", "-nostdin", "-y", "-loglevel", "error", "-i", wav]
+        if " libvorbis " in _encoders():
+            attempts.append(base + ["-c:a", "libvorbis", "-ac", "1", "-q:a", "5", out])
+        attempts.append(base + ["-c:a", "vorbis", "-strict", "-2", "-ac", "2", "-b:a", "96k", out])
+        for cmd in attempts:
+            try:
+                subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL, timeout=60)
+                print("sound ok:", name, flush=True)
+                return True
+            except Exception as e:
+                print("ffmpeg failed for", name, "->", e, flush=True)
+    try:
+        import soundfile
+        soundfile.write(out, data, SR, format="OGG", subtype="VORBIS")
+        print("sound ok (soundfile):", name, flush=True)
+        return True
+    except Exception as e:
+        print("WARNING: could not write sound", name, "->", e, flush=True)
+        return False
 
 
 # ----------------------------------------------------------------------------- main
@@ -376,6 +400,7 @@ def main():
         write_json(os.path.join(A, "models", "item", name + ".json"),
                    {"parent": "minecraft:item/generated", "textures": {"layer0": f"{NS}:item/{name}"}})
 
+    print("item icons written", flush=True)
     armor_texture(1).save(mk(os.path.join(A, "textures", "entity", "equipment", "humanoid", "spider_suit.png")))
     armor_texture(2).save(mk(os.path.join(A, "textures", "entity", "equipment", "humanoid_leggings", "spider_suit.png")))
     write_json(os.path.join(A, "equipment", "spider_suit.json"), {
