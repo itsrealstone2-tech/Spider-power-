@@ -220,7 +220,7 @@ public final class SpiderServer {
 					return;
 				}
 				int use = mode == WebMode.ZIP ? 0 : slot;
-				d.anchors[use] = hitPoint;
+				d.anchors[use] = new V3(hitPoint.x, hitPoint.y, hitPoint.z);
 				d.anchorBlocks[use] = blockHit.getBlockPos();
 				if (mode == WebMode.ZIP) {
 					d.clearAnchor(1);
@@ -334,7 +334,7 @@ public final class SpiderServer {
 					deny(p, ModPackets.Deny.INVALID_TARGET, 1);
 					return;
 				}
-				d.anchors[0] = hit.getLocation();
+				d.anchors[0] = new V3(hit.getLocation().x, hit.getLocation().y, hit.getLocation().z);
 				d.anchorBlocks[0] = hit.getBlockPos();
 				d.clearAnchor(1);
 				level.playSound(null, at.x, at.y, at.z, ModSounds.WEB_SHOOT, SoundSource.PLAYERS, 0.9F, 1.2F);
