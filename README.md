@@ -2,7 +2,9 @@
 
 A Spider-Man-*inspired* superhero mod for recording cinematic gameplay: **physics-based web swinging** (real rope constraint, momentum, no teleporting), a web shooter with 7 modes, wall and ceiling crawling, spider powers, web wings, and a small HUD. Single player and multiplayer. All art and sounds are original and procedurally generated.
 
-> **Status: written, not yet compiled or played.** The code could not be compiled in the environment it was written in (no access to Minecraft's build files). The physics core is unit-tested; everything that touches Minecraft is untested until the GitHub Actions build and a real in-game run. See *Honest status* below.
+> **Status: v1.0.0, builds and runs.** Compiled by GitHub Actions against Minecraft 1.21.11 and played in game on Android (Zalith Launcher), where swinging and the web shooter run smoothly. Multiplayer and dedicated servers have had much less testing. See *Honest status* below.
+
+*Spider Ultimate is an unofficial fan project. It is not affiliated with or endorsed by Marvel, Sony, Mojang or Microsoft. It contains no Marvel artwork or sounds.*
 
 ## Install (Android / Zalith Launcher)
 1. In Zalith, create a profile for **Minecraft 1.21.11** with **Fabric Loader** (0.17 or newer).
@@ -39,14 +41,16 @@ Web modes: Single, Rapid, Zip, Pull, Trap, Bomb, Dual. Abilities: Swing Boost, Q
 ## Building
 Push to GitHub: the workflow in `.github/workflows/build.yml` generates the textures and sounds (`tools/generate_assets.py`), builds with JDK 25 / Gradle 9.8.2, and publishes the jar as the **latest** Release. If the full build fails, it retries without the optional client mixins (crawl body orientation and limb poses) so you still get a working jar. The release notes say which build you got.
 
-Locally: `python3 tools/generate_assets.py` then `gradle build` (needs numpy, scipy, Pillow, ffmpeg).
+Locally: `python3 tools/generate_assets.py` then `gradle build` (needs numpy, scipy, Pillow and soundfile; ffmpeg is optional).
 
 ## Honest status
-**Tested:** the pure-Java physics (rope swing, zip, glide, crawl math) via `tools/test/PhysicsSelfTest.java`: energy, no-teleport step limits, tangential speed gain, crawl-surface handedness. Source parses, JSON assets validate, and lang/sound/item names cross-check.
+**Tested:**
+- The pure-Java physics (rope swing, zip, glide, crawl math) via `tools/test/PhysicsSelfTest.java`: energy, no-teleport step limits, tangential speed gain, crawl-surface handedness.
+- Compiles against Minecraft 1.21.11 in CI.
+- Played in single player on Android (Zalith): web swinging and the web shooter work smoothly with no lag.
 
-**Not tested (needs a real build and play-through):**
-- Compilation against Minecraft 1.21.11 (names were checked against docs, but not by a compiler).
-- Feel of the swing in game, rope rendering, web projectiles, wings, shield visuals.
-- Wall/ceiling crawl transitions and the body rotation / limb poses (mixins; optional).
-- Multiplayer validation under real latency, slow motion, spider sense glow.
-- Generated textures and sounds in game (the Spider Suit look in particular).
+**Less tested (please report problems as GitHub issues):**
+- Multiplayer and dedicated servers under real latency.
+- Wall/ceiling crawl transitions and the body rotation / limb poses (client mixins; optional).
+- Slow motion, spider sense glow, web wings and shield visuals in every situation.
+- Desktop (PC) launchers: the mod is a normal Fabric mod, but it has been played on Android only.
